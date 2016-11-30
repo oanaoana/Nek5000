@@ -196,10 +196,6 @@ C
            call mxm   (u(1,1,1,e),nxy,wddzt,nz1,tm3,nz1)
          
 #ifdef XSMM
-           call stream_update_var_helmholtz(g4m1(1,1,1,e), 
-     $         g5m1(1,1,1,e), g6m1(1,1,1,e), tm1, tm2, tm3, 
-     $         u(1,1,1,e), bm1(1,1,1,e), au(1,1,1,e),
-     $         helm1(1,1,1,e), helm2(1,1,1,e), nxyz)  
            call stream_update_var_helmholtz_no_h2(g4m1(1,1,1,e), 
      $         g5m1(1,1,1,e), g6m1(1,1,1,e), tm1, tm2, tm3, 
      $         au(1,1,1,e), helm1(1,1,1,e),nxyz)            
