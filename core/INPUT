@@ -49,6 +49,7 @@ c
      $               ,IFCVFLD,IFDP0DT
 
       LOGICAL         IFNAV
+      Integer         IDPSS
       EQUIVALENCE    (IFNAV, IFADVC(1))
 C
       COMMON /INPUT4/ HCODE(11,lhis+maxobj),OCODE(8),RSTV,RSTT,DRIVC(5)
