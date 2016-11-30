@@ -83,8 +83,10 @@ C     Compute the (Helmholtz) matrix-vector product,
 C     AU = helm1*[A]u + helm2*[B]u, for NEL elements.
 C
 C------------------------------------------------------------------
+#ifdef XSMM
       use STREAM_UPDATE_KERNELS,only:stream_update_var_helmholtz
       use STREAM_UPDATE_KERNELS,only:stream_update_var_helmholtz_no_h2
+#endif
       include 'SIZE'
       include 'WZ'
       include 'DXYZ'
