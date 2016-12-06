@@ -83,8 +83,12 @@ C     Compute the (Helmholtz) matrix-vector product,
 C     AU = helm1*[A]u + helm2*[B]u, for NEL elements.
 C
 C------------------------------------------------------------------
+#ifdef XSMM
       use STREAM_UPDATE_KERNELS,only:stream_update_var_helmholtz
       use STREAM_UPDATE_KERNELS,only:stream_update_var_helmholtz_no_h2
+      use STREAM_UPDATE_KERNELS,only:stream_sum_var_helmholtz
+      use STREAM_UPDATE_KERNELS,only:stream_sum_var_helmholtz_no_h2
+#endif
       include 'SIZE'
       include 'WZ'
       include 'DXYZ'
@@ -152,38 +156,38 @@ C
 C
 C          Fast 2-d mode: constant properties and undeformed element
 C
-           call mxm   (wddx,nx1,u(1,1,1,e),nx1,tm1,nyz)
-           call mxm   (u(1,1,1,e),nx1,wddyt,ny1,tm2,ny1)
-           call col2  (tm1,g4m1(1,1,1,e),nxyz)
-           call col2  (tm2,g5m1(1,1,1,e),nxyz)
-           call add3  (au(1,1,1,e),tm1,tm2,nxyz)
-           call cmult (au(1,1,1,e),helm1(1,1,1,e),nxyz)
+           	call mxm   (wddx,nx1,u(1,1,1,e),nx1,tm1,nyz)
+           	call mxm   (u(1,1,1,e),nx1,wddyt,ny1,tm2,ny1)
+         	call col2  (tm1,g4m1(1,1,1,e),nxyz)
+         	call col2  (tm2,g5m1(1,1,1,e),nxyz)
+         	call add3  (au(1,1,1,e),tm1,tm2,nxyz)
+          	call cmult (au(1,1,1,e),helm1(1,1,1,e),nxyz)
 C
            else
 C
 C          General case, speed-up for undeformed elements
 C
-           call mxm  (dxm1,nx1,u(1,1,1,e),nx1,dudr,nyz)
-           call mxm  (u(1,1,1,e),nx1,dytm1,ny1,duds,ny1)
-           call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
-           call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
-           if (ifdfrm(e)) then
-              call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
-              call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
+           	call mxm  (dxm1,nx1,u(1,1,1,e),nx1,dudr,nyz)
+           	call mxm  (u(1,1,1,e),nx1,dytm1,ny1,duds,ny1)
+           	call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+           	call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
+           	if (ifdfrm(e)) then
+              	    call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
+              	call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
+          	endif
+           	call col2 (tmp1,helm1(1,1,1,e),nxyz)
+           	call col2 (tmp2,helm1(1,1,1,e),nxyz)
+           	call mxm  (dxtm1,nx1,tmp1,nx1,tm1,nyz)
+           	call mxm  (tmp2,nx1,dym1,ny1,tm2,ny1)
+           	call add2 (au(1,1,1,e),tm1,nxyz)
+           	call add2 (au(1,1,1,e),tm2,nxyz)
+c          gotta add the h2 here as well
            endif
-           call col2 (tmp1,helm1(1,1,1,e),nxyz)
-           call col2 (tmp2,helm1(1,1,1,e),nxyz)
-           call mxm  (dxtm1,nx1,tmp1,nx1,tm1,nyz)
-           call mxm  (tmp2,nx1,dym1,ny1,tm2,ny1)
-           call add2 (au(1,1,1,e),tm1,nxyz)
-           call add2 (au(1,1,1,e),tm2,nxyz)
-
-        endif
 C
         else
         !3-d case ...............
 C
-           if (iffast(e)) then
+        if (iffast(e)) then
 C
 C          Fast 3-d mode: constant properties and undeformed element
 C
@@ -192,21 +196,41 @@ C
              call mxm   (u(1,1,iz,e),nx1,wddyt,ny1,tm2(1,1,iz),ny1)
            enddo 
            call mxm   (u(1,1,1,e),nxy,wddzt,nz1,tm3,nz1)
-         
+ 
+         	  if  (ifh2) then
 #ifdef XSMM
-           call stream_update_var_helmholtz_no_h2(g4m1(1,1,1,e), 
-     $         g5m1(1,1,1,e), g6m1(1,1,1,e), tm1, tm2, tm3, 
-     $         au(1,1,1,e), helm1(1,1,1,e),nxyz)            
+      		  call stream_update_var_helmholtz(g4m1(1,1,1,e), 
+     $               g5m1(1,1,1,e), g6m1(1,1,1,e), tm1, tm2, tm3, 
+     $               u(1,1,1,e),bm1(1,1,1,e),au(1,1,1,e), 
+     $               helm1(1,1,1,e),helm2(1,1,1,e),nxyz)            
 #else 
-           call col2  (tm1,g4m1(1,1,1,e),nxyz)
-           call col2  (tm2,g5m1(1,1,1,e),nxyz)
-           call col2  (tm3,g6m1(1,1,1,e),nxyz)
-           call add3  (au(1,1,1,e),tm1,tm2,nxyz)
-           call add2  (au(1,1,1,e),tm3,nxyz)
-           call cmult (au(1,1,1,e),helm1(1,1,1,e),nxyz) 
+          	  call col2  (tm1,g4m1(1,1,1,e),nxyz)
+          	  call col2  (tm2,g5m1(1,1,1,e),nxyz)
+           	  call col2  (tm3,g6m1(1,1,1,e),nxyz)
+           	  call add3  (au(1,1,1,e),tm1,tm2,nxyz)
+           	  call add2  (au(1,1,1,e),tm3,nxyz)
+                  call cmult (au(1,1,1,e),helm1(1,1,1,e),nxyz) 
+          	  call addcol4 (au(1,1,1,e),helm2(1,1,1,e),
+     $                  bm1(1,1,1,e),u(1,1,1,e),nxyz)
            !au(:,:,:) = h11* ( tm1*gx + tm2*gy + tm3*gz )+ h22*bm1*u
 #endif
-           else
+                   else       
+#ifdef XSMM
+            	 call stream_update_var_helmholtz_no_h2(
+     $               g4m1(1,1,1,e), g5m1(1,1,1,e), g6m1(1,1,1,e), 
+     $               tm1, tm2, tm3, 
+     $               au(1,1,1,e), helm1(1,1,1,e),nxyz)            
+#else 
+         	 call col2  (tm1,g4m1(1,1,1,e),nxyz)
+           	 call col2  (tm2,g5m1(1,1,1,e),nxyz)
+          	 call col2  (tm3,g6m1(1,1,1,e),nxyz)
+           	 call add3  (au(1,1,1,e),tm1,tm2,nxyz)
+         	 call add2  (au(1,1,1,e),tm3,nxyz)
+        	 call cmult (au(1,1,1,e),helm1(1,1,1,e),nxyz) 
+           !au(:,:,:) = h11* ( tm1*gx + tm2*gy + tm3*gz )+ h22*bm1*u
+#endif
+                  endif
+         else       
 C
 C          General case, speed-up for undeformed elements
 C
@@ -215,25 +239,7 @@ C
               call mxm(u(1,1,iz,e),nx1,dytm1,ny1,duds(1,1,iz),ny1)
            enddo
            call mxm     (u(1,1,1,e),nxy,dztm1,nz1,dudt,nz1)
-#ifdef XSMM    
-        if (ifdfrm(e)) then
-           call stream_update_var_helmholtz_no_h2(g1m1(1,1,1,e), 
-     $         g4m1(1,1,1,e), g5m1(1,1,1,e), dudr, duds, dudt, 
-     $         tmp1,  helm1(1,1,1,e), nxyz)  
 
-          call stream_update_var_helmholtz_no_h2(g4m1(1,1,1,e), 
-     $         g2m1(1,1,1,e), g6m1(1,1,1,e), dudr, duds, dudt, 
-     $         tmp2,  helm1(1,1,1,e), nxyz)  
-      
-          call stream_update_var_helmholtz_no_h2(g5m1(1,1,1,e), 
-     $         g6m1(1,1,1,e), g3m1(1,1,1,e), dudr, duds, dudt, 
-     $         tmp3,  helm1(1,1,1,e), nxyz)
-        else
-           call col4(tmp1,helm1(1,1,1,e),dudr,g1m1(1,1,1,e),nxyz)
-           call col4(tmp2,helm1(1,1,1,e),duds,g2m1(1,1,1,e),nxyz)
-           call col4(tmp3,helm1(1,1,1,e),dudt,g3m1(1,1,1,e),nxyz)
-        endif 
-#else 
            call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
            call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
@@ -248,24 +254,40 @@ C
            call col2 (tmp1,helm1(1,1,1,e),nxyz)
            call col2 (tmp2,helm1(1,1,1,e),nxyz)
            call col2 (tmp3,helm1(1,1,1,e),nxyz)
-#endif       
+   
            call mxm  (dxtm1,nx1,tmp1,nx1,tm1,nyz)
            do iz=1,nz1
               call mxm(tmp2(1,1,iz),nx1,dym1,ny1,tm2(1,1,iz),ny1)
            enddo
            call mxm  (tmp3,nxy,dzm1,nz1,tm3,nz1)
+                 if (ifh2) then
+#ifdef XSMM
+                 call stream_sum_var_helmholtz(tm1, tm2, tm3, 
+     $                  u(1,1,1,e), bm1(1,1,1,e),au(1,1,1,e),  
+     $                  helm1(1,1,1,e), helm2(1,1,1,e), nxyz) 
+          
+#else
+                 call add4(au(1,1,1,e),tm1,tm2,tm3,nxyz)
+        	 call col2(au(1,1,1,e),helm(1,1,1,e),nxyz)
+        	 call addcol4(au(1,1,1,e),helm2(1,1,1,e),
+     $                      bm1(1,1,1,e),u(1,1,1,e),nxyz)
+#endif
+                 else   
+#ifdef XSMM
+               call stream_sum_var_helmholtz_no_h2(tm1, tm2, tm3, 
+     $                au(1,1,1,e),  helm1(1,1,1,e), nxyz) 
+#else
+                 call add4(au(1,1,1,e),tm1,tm2,tm3,nxyz)
+                 call col2(au(1,1,1,e),helm(1,1,1,e),nxyz)
 
-           call add2 (au(1,1,1,e),tm1,nxyz)
-           call add2 (au(1,1,1,e),tm2,nxyz)
-           call add2 (au(1,1,1,e),tm3,nxyz)
-
-           endif
-c
+#endif            
+                  endif  
+            endif
         endif
 C
       enddo
 C
-      if (ifh2) call addcol4 (au,helm2,bm1,u,ntot)
+c      if (ifh2) call addcol4 (au,helm2,bm1,u,ntot)
 C
 C     If axisymmetric, add a diagonal term in the radial direction (ISD=2)
 C
