@@ -268,7 +268,7 @@ C
           
 #else
                  call add4(au(1,1,1,e),tm1,tm2,tm3,nxyz)
-        	 call col2(au(1,1,1,e),helm(1,1,1,e),nxyz)
+        	 call col2(au(1,1,1,e),helm1(1,1,1,e),nxyz)
         	 call addcol4(au(1,1,1,e),helm2(1,1,1,e),
      $                      bm1(1,1,1,e),u(1,1,1,e),nxyz)
 #endif
@@ -278,7 +278,7 @@ C
      $                au(1,1,1,e),  helm1(1,1,1,e), nxyz) 
 #else
                  call add4(au(1,1,1,e),tm1,tm2,tm3,nxyz)
-                 call col2(au(1,1,1,e),helm(1,1,1,e),nxyz)
+                 call col2(au(1,1,1,e),helm1(1,1,1,e),nxyz)
 
 #endif            
                   endif  
