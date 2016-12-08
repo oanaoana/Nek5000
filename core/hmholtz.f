@@ -268,7 +268,6 @@ C
               call mxm(tmp2(1,1,iz),nx1,dym1,ny1,tm2(1,1,iz),ny1)
            enddo
            call mxm  (tmp3,nxy,dzm1,nz1,tm3,nz1)
-
                  if (ifh2) then
 #ifdef XSMM
                  call stream_sum_var_helmholtz_noh1(tm1, tm2, tm3, 
@@ -277,6 +276,7 @@ C
           
 #else
                  call add4(au(1,1,1,e),tm1,tm2,tm3,nxyz)
+        	 call col2(au(1,1,1,e),helm(1,1,1,e),nxyz)
         	 call addcol4(au(1,1,1,e),helm2(1,1,1,e),
      $                      bm1(1,1,1,e),u(1,1,1,e),nxyz)
 #endif
