@@ -298,13 +298,13 @@ C          General case, speed-up for undeformed elements
                  
                  endif
             else   
-!#ifdef XSMM
-!            call stream_sum(tm1, tm2, tm3, 
-!     $                au(1,1,1,e), nxyz) 
-!#else
+#ifdef XSMM
+            call stream_sum(tm1, tm2, tm3, 
+     $                au(1,1,1,e), nxyz) 
+#else
            call add4(au(1,1,1,e),tm1,tm2,tm3,nxyz)
                 
-!#endif            
+#endif            
            endif     
           endif
         endif
