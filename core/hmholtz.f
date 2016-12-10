@@ -203,7 +203,6 @@ CC          Fast 3-d mode: constant properties and undeformed element
            call mxm   (u(1,1,1,e),nxy,wddzt,nz1,tm3,nz1)
                if  (ifh2) then
 #ifdef XSMM
-               if (e.eq.10) write(*,*) "eddy psi fast"
       		  call stream_update_helmholtz(g4m1(1,1,1,e), 
      $               g5m1(1,1,1,e), g6m1(1,1,1,e), tm1, tm2, tm3, 
      $               u(1,1,1,e),bm1(1,1,1,e),au(1,1,1,e), 
@@ -266,11 +265,9 @@ C          General case, speed-up for undeformed elements
            enddo
            call mxm  (tmp3,nxy,dzm1,nz1,tm3,nz1)
            
-           if (ifh2) then
-                  
+           if (ifh2) then                  
                  if(ifuservp) then
-#ifdef XSMM  
-                
+#ifdef XSMM          
                  call stream_sum_var_helmholtz_noh1(tm1, tm2, tm3, 
      $                  u(1,1,1,e), bm1(1,1,1,e),au(1,1,1,e),  
      $                  helm2(1,1,1,e), nxyz) 
@@ -288,7 +285,7 @@ C          General case, speed-up for undeformed elements
                  call stream_sum_helmholtz(tm1, tm2, tm3, 
      $                  u(1,1,1,e), bm1(1,1,1,e),au(1,1,1,e),  
      $                  h1,h2, nxyz) 
-          
+                          
 #else
                  call add4(au(1,1,1,e),tm1,tm2,tm3,nxyz)
                  call cmult(au(1,1,1,e),h1) 
@@ -301,6 +298,7 @@ C          General case, speed-up for undeformed elements
 #ifdef XSMM
             call stream_sum(tm1, tm2, tm3, 
      $                au(1,1,1,e), nxyz) 
+         
 #else
            call add4(au(1,1,1,e),tm1,tm2,tm3,nxyz)
                 
