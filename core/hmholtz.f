@@ -144,7 +144,6 @@ C
       etime1=dnekclock()
 
       IF (.NOT.IFSOLV) CALL SETFAST(HELM1,HELM2,IMESH)
-      CALL RZERO (AU,NTOT)
 
       do e=1,nel
 C
