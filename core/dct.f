@@ -192,7 +192,7 @@ C      locthres=compthres*sqrt(vol_el)!/sqrt(volm)!*sqrt(real(nelgv))
          endif
               
       end do   
-      !write(*,*) 'compthres', locthres, vol_el   
+      !write(*,*) 'compthres', i
       comp=real(i)/real(nxyz4)
       
       RETURN
@@ -216,12 +216,10 @@ C----------------------------------------------------------------------
       logical tt
 
       nxyz4=nx4*ny4*nz4;
-      call copy(f,fin,nxyz4) 
       call copy(ftrunc,fin,nxyz4)   
-      call copy(Bmlocal,BM4(:,:,:,iel),nxyz4)
+      call copy(bmlocal,BM4(:,:,:,iel),nxyz4)
 
-      call col2(f,f,nxyz4)
-      !call dssum(f,lx1,ly1,lz1)
+      call col3(f,fin,fin,nxyz4)
       call col2(f,bmlocal,nxyz4)
       !!call absolute(f,nxyz4)
       !! this for l2 norm only, but works for all others simlarly
@@ -229,28 +227,81 @@ C----------------------------------------------------------------------
       call sort(f,indd,nxyz4)   
       vol_el=elvolm4(iel)
 
-      !vlsum(BMlocal,nxyz4)
-
-C      locthres=compthres*sqrt(vol_el)!/sqrt(volm)!*sqrt(real(nelgv))
-      locthres=compthres*sqrt(vol_el)!/sqrt(volm)!*sqrt(real(nelgv))
+      locthres=compthres*sqrt(vol_el)
       error=0.0
       i=0.0
       temp1=0.0
       tt=.true.
       do while (tt)
          temp1=temp1+f(i+1,1,1)
-         error=sqrt(temp1)!*vol_el!/volm
+         error=sqrt(temp1)
          if  ((error.lt.locthres) .and. (i+2.le.lx4*ly4*lz4)) then
              i=i+1
              ordind=indd(i) 
              ftrunc(ordind,1,1)=0.0 
-         else 
+          else 
              tt=.false.
          endif
               
       end do   
-      !write(*,*) 'compthres', locthres, vol_el   
       comp=real(i)/real(nxyz4)
+      
+      RETURN
+      END
+
+c-----------------------------------------------------------------------
+      subroutine truncatedlt(ftrunc,fin,comp,iel)
+C----------------------------------------------------------------------
+c     truncate in spectral space 
+C----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+      include 'COMPRESS'
+     
+      integer indd(lx1*ly1*lz1)
+      real fin(lx1,ly1,lz1) 
+      real f(lx1,ly1,lz1) 
+      real ftrunc(lx1,ly1,lz1) 
+      real error, temp1, temp2,vol_el, locthres,fact
+      integer i,nxyz1,ordind,iel
+      real comp, bmlocal(lx1,ly1,lz1)
+      logical tt
+
+      nxyz1=nx1*ny1*nz1
+      call copy(ftrunc,fin,nxyz1)   
+      call copy(bmlocal,BM1(:,:,:,iel),nxyz1)
+
+      call rone(indd,nxyz1)
+      call col3(f,fin,fin,nxyz1)
+      call col2(f,bmlocal,nxyz1)
+      !! this for l2 norm only, but works for all others simlarly
+      ! return f ordered ascending, and array indd of indeces
+      call sort(f,indd,nxyz1)   
+      vol_el=elvolm1(iel)
+      !write(*,*) 'indd', (f(i,1,1), i=1,nx1*nx1)
+      locthres=compthres*sqrt(vol_el)
+      error=0.0
+      i=0
+      temp1=0.0
+      tt=.true.
+      do while (tt.eqv..true.)!.and.i.lt.nxyz1)
+         
+         fact=fDLT(indd(i+1),1,1)/bmlocal(indd(i+1),1,1) 
+         temp1=temp1+dble(f(i+1,1,1)*fact)
+         !write(*,*) 'temp',i+1,indd(i+1),f(i+1,1,1),fact,temp1
+         error=sqrt(temp1)
+         i=i+1
+         if  ((error.lt.locthres) .and. (i+2.le.lx1*ly1*lz1)) then
+             i=i+1
+             ordind=indd(i) 
+             ftrunc(ordind,1,1)=0.0 
+          else 
+             tt=.false.
+         endif   
+      end do  
+      !call exitt
+      !write(*,*), 'comp',i 
+      comp=dble(dble(i)/dble(nxyz1))
       
       RETURN
       END
@@ -281,8 +332,121 @@ C--------------------------------------------------------------------
       RETURN
       END
 
+c----------------------------------------------------------------------
+      SUBROUTINE DLT_build
+C----------------------------------------------------------------------
+C
+C     Compute the one-dimensional DCT matrix
+c     extra care needed since this is not done flexibly accors dimensions
+C--------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+      include 'COMPRESS'
+     
+      real Lj(lx1), fac(lx1)
+      integer i,j
 
 
+      call rone(fac,nx1) 
+
+      do i=1,nx1
+          call legendre_poly(Lj,ZGM1(i,1),nx1)
+          do j=1,ny1   
+          fac(j)=dble(dble(2.0*(j-1.0)+1.0)/2.0);
+          if (j.eq.nx1) fac(j)=dble(dble(nx1-1.0)/2.0);    
+          DLT1d(j,i)=Lj(j)*wxm1(i)
+          iDLT1d(i,j)=dble(Lj(j)*fac(j))
+          end do
+      end do 
+      call copy(DLT1dT, DLT1d,nx1*nx1) 
+      call copy(iDLT1dT, iDLT1d,nx1*nx1) 
+      call transpose1(DLT1dT,nx1)
+      call transpose1(iDLT1dT,nx1)
+
+      do i=1,nx1
+         do j=1,ny1
+            fDLT(i,j,1)=fac(i)*fac(j)
+            if (if3d) then
+            do k=1,nz1
+               fDLT(i,j,k)=fac(i)*fac(j)*fac(k) 
+            enddo 
+            endif
+         enddo
+      enddo
+
+      !write(*,*) 'DLT1d', (fac(i), i=1,nx1)
+      !write(*,*) 'iDLT1dT', (iDLT1d(i,1), i=1,nx1*nx1)
+      !call exitt
+      RETURN
+      END
+
+c----------------------------------------------------------------
+      subroutine DLT (y,x,iel)
+
+       INCLUDE 'SIZE'
+       INCLUDE 'GEOM'
+       INCLUDE 'IXYZ'
+       INCLUDE 'INPUT'
+       INCLUDE 'COMPRESS' 
+ 
+       REAL X(LX1,LY1,LZ1)
+       REAL Y(LX1,LY1,LZ1)
+      
+       COMMON /CTMP0/ XA(LX1,LY1,LZ1), XB(LX1,LY1,LZ1)
+          
+       NYZ1 = NY1*NZ1
+       NXY4 = NX4*NY4
+       NYZ4 = NY4*NZ4
+      
+
+       if(IF3D) then
+       CALL MXM (DLT1d,NX1,X,NX1,XA,NYZ1)
+       DO IZ=1,NZ1    
+           CALL MXM (XA(1,1,IZ),NX4,DLT1dT,NY1,XB(1,1,IZ),NY1)
+       enddo 
+       CALL MXM (XB,NXY1,DLT1dT,NZ1,Y,NZ1)
+       else
+           CALL MXM (DLT1d,NX1,X,NX1,XA,NYZ1)
+           CALL MXM (XA,NX1,DLT1dT,NY1,Y,NY1)
+       endif
+
+
+       RETURN
+       END
+
+c--------------------------------------------------------------
+       subroutine iDLT (y,x,iel)
+C---------------------------------------------------------------
+C
+C     Take IDCT of x return result y 
+C---------------------------------------------------------------
+       INCLUDE 'SIZE'
+       INCLUDE 'GEOM'
+       INCLUDE 'IXYZ'
+       INCLUDE 'INPUT'
+       INCLUDE 'COMPRESS'
+
+       REAL X(LX1,LY1,LZ1)
+       REAL Y(LX1,LY1,LZ1)
+C
+       COMMON /CTMP0/ XA(LX1,LY1,LZ1), XB(LX1,LY1,LZ1)
+
+       NXY1 = NX1*NY1
+       NYZ1 = NY1*NZ1
+       
+       if(IF3D) then
+       CALL MXM (iDLT1d,NX1,X,NX1,XA,NYZ1)
+       DO IZ=1,NZ1    
+           CALL MXM (XA(1,1,IZ),NX1,iDLT1dT,NY1,XB(1,1,IZ),NY1)
+       enddo 
+       CALL MXM (XB,NXY1,iDLT1dT,NZ1,Y,NZ1)
+       else
+           CALL MXM (iDLT1d,NX1,X,NX1,XA,NYZ1)
+           CALL MXM (XA,NX1,iDLT1dT,NY1,Y,NY1)
+       endif
+
+       RETURN
+       END
 
 c-----------------------------------------------------------------------
       subroutine errorsM4(l2norm,maxerr,f1,f2)
@@ -348,43 +512,58 @@ C---------------------------------------------------------------
       INCLUDE 'TOTAL'
       INCLUDE 'COMPRESS'
  
-      integer n, n4,nxyz4
+      integer n, n4,nxyz4,ii
 
       nxyz4=nx4*ny4*nz4
       n=nx1*ny1*nz1*nelv
       n4=nx4*ny4*nz4*nelv
 
+      call rzero(ZGM4,lx4*ldim)
+      call rone(wzm4,lz4)
 c     generate chebyshev grid
       call ZWGLJD (ZGM4(1,1),WXM4,lx4,-0.5,-0.5) 
       call ZWGLJD (ZGM4(1,2),WYM4,ly4,-0.5,-0.5)  
       if(IF3D) then
-      call ZWGLJD (ZGM4(1,3),WZM4,lz4,-0.5,-0.5)  
+          call ZWGLJD (ZGM4(1,3),WZM4,lz4,-0.5,-0.5)  
       endif
-
-      do iz=1,nz4
+      
       DO IY=1,NY4
        DO IX=1,NX4
-         W3M4(IX,IY,IZ)=WXM4(IX)*WYM4(IY)*WZM4(IZ)
+         W3M4(IX,IY,1)=WXM4(IX)*WYM4(IY)
        enddo
       enddo
-      enddo
 
+      if (if3d) then
+        DO Ix=1,Nx4
+           DO Iy=1,Ny4
+             do iz=1,Nz4
+               W3M4(IX,IY,IZ)=WXM4(IX)*WYM4(IY)*WZM4(IZ)
+             enddo
+           enddo
+         enddo
+      endif
+      
+     
 c     build interpolants, not for 3d yet
 c     interpolate from mesh  M4(Chebyshev) to M1(GLL)
       CALL IGLJM (IXM41,IXTM41,ZGM4(1,1),ZGM1(1,1),NX4,NX1,
      $ NX4,NX1,-0.5,-0.5)
       CALL IGLJM (IYM41,IYTM41,ZGM4(1,2),ZGM1(1,2),NY4,NY1,
      $ NY4,NY1,-0.5,-0.5) 
+      if (IF3D) then
       CALL IGLJM (IZM41,IZTM41,ZGM4(1,3),ZGM1(1,3),NZ4,NZ1,
      $ NZ4,NZ1,-0.5,-0.5) 
+      endif
       
 c     interpolate from mesh M1(GLL) to mesh M4(Chebyshev)
       CALL IGLLM (IXM14,IXTM14,ZGM1(1,1),ZGM4(1,1),NX1,NX4,
      $ NX1,NX4) 
       CALL IGLLM (IYM14,IYTM14,ZGM1(1,2),ZGM4(1,2),NY1,NY4,
      $ NY1,NY4) 
+      if (IF3D) then
       CALL IGLLM (IZM14,IZTM14,ZGM1(1,3),ZGM4(1,3),NZ1,NZ4,
      $ NZ1,NZ4) 
+      endif
 
 c     build geometric factors
        DO IEL=1,NELV
@@ -412,6 +591,7 @@ C        Compute the mass matrix on mesh M4
           elvolm1(iel)=vlsum(BM1(1,1,1,iel),nxyz4)
           !call invcol2 (BM1local(1,1,1,iel),vmult(1,1,1,iel),nxyz4)
           elvolm4(iel)=vlsum(BM4(1,1,1,iel),nxyz4)
+          !write(*,*) 'volumes'
        end do
       volm=glsum(bm1,n)
 

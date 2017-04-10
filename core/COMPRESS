@@ -38,15 +38,20 @@ C
      $             ,IYTM14(LY1,LY4),  IYTM41(LY4,LY1)
      $             ,IZTM14(LZ1,LZ4),  IZTM41(LZ4,LZ1)
      $             ,DCT1d(LX1,LX4),   DCT1dT(LX4,LX1) 
+     $             ,DLT1d(LX1,LX1),   DLT1dT(LX1,LX1) 
+     $             ,iDLT1d(LX1,LX1),  iDLT1dT(LX1,LX1) 
+     $             ,fDLT(lx1,ly1,lz1)
      $             ,elvolm1(lelv), elvolm4(lelv), volm
 
       REAL   IXM14,IYM14,IZM14,IXM41,IYM41,IZM41
       REAL   IXTM14,IYTM14,IZTM14,IXTM41,IYTM41,IZTM41
       REAL   DCT1d, DCT1dT
+      REAL   DLT1d, DLT1dT
+      REAL   iDLT1d, iDLT1dT
 
-      COMMON /grid/  ZGM4(lx4,ldim)
+      COMMON /grid/  ZGM4(lx4,3)
      $               ,WXM4(lx4), WYM4(ly4), WZM4(lz4)
      $               ,W3M4(lx4,ly4,lz4)
-      real   ZGM4,WXM4, WYM4, WZM4,W3M2 
+      real   ZGM4,WXM4, WYM4, WZM4, W3M2 
      
 
