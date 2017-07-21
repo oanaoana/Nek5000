@@ -47,7 +47,8 @@ C
       REAL   IXTM14,IYTM14,IZTM14,IXTM41,IYTM41,IZTM41
       REAL   DCT1d, DCT1dT
       REAL   DLT1d, DLT1dT
-      REAL   iDLT1d, iDLT1dT
+      REAL   iDLT1d, iDLT1dT, fDLT
+      REAL   elvolm1, elvolm4
 
       COMMON /grid/  ZGM4(lx4,3)
      $               ,WXM4(lx4), WYM4(ly4), WZM4(lz4)

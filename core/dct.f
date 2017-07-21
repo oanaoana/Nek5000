@@ -260,6 +260,7 @@ C----------------------------------------------------------------------
      
       integer indd(lx1*ly1*lz1)
       real fin(lx1,ly1,lz1) 
+      real f2(lx1,ly1,lz1) 
       real f(lx1,ly1,lz1) 
       real ftrunc(lx1,ly1,lz1) 
       real error, temp1, temp2,vol_el, locthres,fact
@@ -272,8 +273,10 @@ C----------------------------------------------------------------------
       call copy(bmlocal,BM1(:,:,:,iel),nxyz1)
 
       call rone(indd,nxyz1)
+      !call col3(f2,fin,fDLT,nxyz1)
       call col3(f,fin,fin,nxyz1)
-      call col2(f,bmlocal,nxyz1)
+      call col2(f,fDLT,nxyz1)
+      call col2(f,jacm1,nxyz1)
       !! this for l2 norm only, but works for all others simlarly
       ! return f ordered ascending, and array indd of indeces
       call sort(f,indd,nxyz1)   
@@ -286,8 +289,8 @@ C----------------------------------------------------------------------
       tt=.true.
       do while (tt.eqv..true.)!.and.i.lt.nxyz1)
          
-         fact=fDLT(indd(i+1),1,1)/bmlocal(indd(i+1),1,1) 
-         temp1=temp1+dble(f(i+1,1,1)*fact)
+         !fact=fDLT(indd(i+1),1,1)!/bmlocal(indd(i+1),1,1) 
+         temp1=temp1+dble(f(i+1,1,1))!/fact)
          !write(*,*) 'temp',i+1,indd(i+1),f(i+1,1,1),fact,temp1
          error=sqrt(temp1)
          i=i+1
@@ -352,8 +355,8 @@ C--------------------------------------------------------------------
       do i=1,nx1
           call legendre_poly(Lj,ZGM1(i,1),nx1)
           do j=1,ny1   
-          fac(j)=dble(dble(2.0*(j-1.0)+1.0)/2.0);
-          if (j.eq.nx1) fac(j)=dble(dble(nx1-1.0)/2.0);    
+          fac(j)=dble(dble(2.0*dble(j)-1.0)/2.0);
+          if (j.eq.nx1) fac(j)=dble((dble(nx1)-1.0)/2.0);    
           DLT1d(j,i)=Lj(j)*wxm1(i)
           iDLT1d(i,j)=dble(Lj(j)*fac(j))
           end do
@@ -395,16 +398,13 @@ c----------------------------------------------------------------
        COMMON /CTMP0/ XA(LX1,LY1,LZ1), XB(LX1,LY1,LZ1)
           
        NYZ1 = NY1*NZ1
-       NXY4 = NX4*NY4
-       NYZ4 = NY4*NZ4
-      
 
        if(IF3D) then
        CALL MXM (DLT1d,NX1,X,NX1,XA,NYZ1)
        DO IZ=1,NZ1    
            CALL MXM (XA(1,1,IZ),NX4,DLT1dT,NY1,XB(1,1,IZ),NY1)
        enddo 
-       CALL MXM (XB,NXY1,DLT1dT,NZ1,Y,NZ1)
+       CALL MXM (XB,NYZ1,DLT1dT,NZ1,Y,NZ1)
        else
            CALL MXM (DLT1d,NX1,X,NX1,XA,NYZ1)
            CALL MXM (XA,NX1,DLT1dT,NY1,Y,NY1)
