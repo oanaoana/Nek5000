@@ -18,11 +18,11 @@
 #-------------------------------------------------------------------------------
 
 # optional compiler flags
-#FFLAGS=""
+FFLAGS="`pkg-config --cflag ${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig/PETSc.pc`"
 #CFLAGS=""
 
 # optional linking flags
-#USR_LFLAGS+=" -L/usr/lib -lfoo"
+USR_LFLAGS+="`pkg-config --libs ${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig/PETSc.pc`"
 
 # auxilliary files to compile
 # NOTE: source files have to located in the same directory as makenek
