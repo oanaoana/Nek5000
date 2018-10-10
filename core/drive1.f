@@ -1,6 +1,9 @@
+#include <petsc/finclude/petscsys.h>
+
 c-----------------------------------------------------------------------
       subroutine nek_init(intracomm)
 c
+      use petscsys
 
       include 'SIZE'
       include 'TOTAL'
@@ -32,8 +35,10 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       real*8 t0, tpp
 
       logical ifemati,ifsync_
+      PetscErrorCode   ierr
 
       call get_session_info(intracomm)
+      call PetscInitialize(PETSC_NULL_CHARACTER,ierr)
 
       etimes = dnekclock()
       istep  = 0
@@ -323,15 +328,20 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine nek_end
 
+      use petscsys
+
       include 'SIZE'
       include 'TSTEP'
       include 'PARALLEL'
       include 'OPCTR'
 
+      PetscErrorCode   ierr
+
       if(instep.ne.0)  call runstat
       if(xxth(1).gt.0) call fgslib_crs_stats(xxth(1))
 
    
+      call PetscFinalize(ierr)
       call in_situ_end()
       return
       end
