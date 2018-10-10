@@ -19,6 +19,7 @@ fi
 tar -zxf *.tar.gz
 
 cd gslib-$VER
+patch -Np1 < ../gs_unique.patch
 make -j4 CC="$CC" CFLAGS="$CFLAGS" $GSLIB_OPT lib
 mkdir `pwd`/../lib 
 make PREFIX="`pwd`/../lib" install
