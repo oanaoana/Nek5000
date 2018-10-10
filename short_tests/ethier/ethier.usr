@@ -1,3 +1,5 @@
+#include "petsc/finclude/petsctao.h"
+
 c  Exact fully 3D Navier-Stokes benchmark
 c   
 c  Reference:
@@ -88,6 +90,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine userchk()
+      use petsctao
       include 'SIZE'
       include 'TOTAL'
 
@@ -102,6 +105,13 @@ c-----------------------------------------------------------------------
       real prerr(lx2,ly2,lz2,lelv)
 
       real hxyz(ldim,lhis)
+
+      PetscErrorCode   ierr
+      Tao taoSolver
+
+      call TaoCreate(PETSC_COMM_WORLD,taoSolver,ierr)
+
+      call TaoDestroy(taoSolver,ierr)
 
       n  = nelv*nx1*ny1*nz1
       n2 = nelv*nx2*ny2*nz2
