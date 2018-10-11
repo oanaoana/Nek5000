@@ -1,0 +1,40 @@
+#
+# nek parameter file
+#
+[GENERAL] 
+startFrom = rs_cavity.fld
+stopAt = numSteps #endTime
+endTime = 1.0
+numSteps = 0
+
+dt = 1e-03
+timeStepper = bdf3 #char #steady
+variableDt = yes
+targetCFL = 0.5
+
+writeControl = timeStep #runTime
+writeInterval = 5000
+
+dealiasing = yes
+filtering = hpfrt
+filterCutoffRatio = 0.95
+filterWeight = 0.01
+
+#userParam01 = 1 # use in .usr uparam(01)
+
+[PROBLEMTYPE]
+stressFormulation = no
+#dp0dt = yes
+variableProperties = no
+
+[PRESSURE]
+preconditioner = semg_xxt
+residualTol = 1e-8
+residualProj = yes
+
+[VELOCITY]
+residualTol = 1e-9
+residualProj = yes
+density = 1
+viscosity = -2000
+advection = yes
